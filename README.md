@@ -10,7 +10,7 @@ The expressionParser.js file does currently support very primitive boolean expre
 
 The expressionParser is a singleton defined in the global environment. It returns an object with a single function attached ('createFilterTreeFromFilterObject'). In order for the parser to work (as it currently stands), you must pass in an object that contains a list of filter groups and the conjunctions for all filters in those groups. If you have a boolean expression such as:
 
-expr1 || expr2 || (expr3 && expr4 && (expr5 || expr6)
+expr1 || expr2 || (expr3 && expr4 && (expr5 || expr6))
 
 Then filter object structure should look something like the following:
 
