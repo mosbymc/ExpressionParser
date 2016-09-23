@@ -22,12 +22,14 @@ var filters = {
 		{
 		  field: 'somefield1',
 		  value: 'somevalue1',
-		  operation: 'some boolean or mathemathical operation'
+		  operation: 'some boolean or mathemathical operation',
+		  dataType: 'string'
 		},
 		{
 		  field: 'somefield2',
 		  value: 'somevalue2',
-		  operation: 'some boolean or mathemathical operation'
+		  operation: 'some boolean or mathemathical operation',
+		  dataType: 'number'
 		},
 		{
 			conjunct: 'and',
@@ -35,12 +37,14 @@ var filters = {
 				{
 		      field: 'somefield3',
 		      value: 'somevalue3',
-		      operation: 'some boolean or mathemathical operation'
+		      operation: 'some boolean or mathemathical operation',
+		      dataType: 'date'
 		    },
 				{
 		      field: 'somefield4',
 		      value: 'somevalue4',
-		      operation: 'some boolean or mathemathical operation'
+		      operation: 'some boolean or mathemathical operation',
+		      dataType: 'time'
 		    },
 				{
 					conjunct: 'or',
@@ -48,12 +52,14 @@ var filters = {
 					  {
 					    field: 'somefield5',
 					    value: 'somevalue5',
-					    operation: 'some boolean or mathemathical operation'
+					    operation: 'some boolean or mathemathical operation',
+					    dataType: 'number'
 					  },
 					  {
 					    field: 'somefield6',
 					    value: 'somevalue6',
-					    operation: 'some boolean or mathemathical operation'
+					    operation: 'some boolean or mathemathical operation',
+					    dataType: 'string'
 					  }
 					]
 				}
@@ -64,7 +70,7 @@ var filters = {
 
 ````
 
-Here, each field is an attribute of a javascript object, each value is some value (number, string, boolean, date, etc.) that the field should be compared to, and the operation is a shorthand for various javascript operators (listed below).
+Here, each field is an attribute of a javascript object, each value is some value (number, string, boolean, date, etc.) that the field should be compared to, and the operation is a shorthand for various javascript operators (listed below). The 'dataType' property let the tree know how to handle each data point when evaluating the tree against a collection. If not set, the tree will assume the data type to be a string, so if you see results that do not look accurate, ensure you are setting the dataType properly for each filter item.
 
 When you call 'expressionParser.createFilterTreeFromFilterObject()' and pass in the filter object, it will build up a tree structure and return an object containing the tree; waiting to be evaluated. Whenever you are ready for the tree to be evaluated against some collection of javascript models, you just need to call the 'filterCollection' function on the object returned from the previous call, passing in the collection of models you wished to be filtered.
 
@@ -79,7 +85,7 @@ Here are the list of operations and their alias used by the expressionParser tha
 - Less Than or Equal: '<=' or 'lte'
 - Greater Than: '>' or 'gt'
 - Greater Than or Equal: '>=' or 'gte'
-- Not: '!' or 'not'
-- Truthy: '' (will internally use '!!' to determine a truthy value)
+- Not: '!' or 'not' or 'falsey'
+- Truthy: 'truthy' (will internally use '!!' to determine a truthy value)
 - Contains: 'ct' (this is for strings; i.e. ~val.toLowerCase().indexOf('some string')
 - Does not Contain: 'nct' (same as above but with ! to cause the flip)
