@@ -32,40 +32,40 @@ var filters = {
 		  dataType: 'number'
 		},
 		{
-			conjunct: 'and',
-			filterGroup: [
-				{
+		  conjunct: 'and',
+		  filterGroup: [
+		    {
 		      field: 'somefield3',
 		      value: 'somevalue3',
 		      operation: 'some boolean or mathemathical operation',
 		      dataType: 'date'
 		    },
-				{
+		    {
 		      field: 'somefield4',
 		      value: 'somevalue4',
 		      operation: 'some boolean or mathemathical operation',
 		      dataType: 'time'
 		    },
-				{
-					conjunct: 'or',
-					filterGroup: [
-					  {
-					    field: 'somefield5',
-					    value: 'somevalue5',
-					    operation: 'some boolean or mathemathical operation',
-					    dataType: 'number'
-					  },
-					  {
-					    field: 'somefield6',
-					    value: 'somevalue6',
-					    operation: 'some boolean or mathemathical operation',
-					    dataType: 'string'
-					  }
-					]
-				}
-			]
+		    {
+		      conjunct: 'or',
+		      filterGroup: [
+		        {
+			  field: 'somefield5',
+			  value: 'somevalue5',
+		          operation: 'some boolean or mathemathical operation',
+			  dataType: 'number'
+			},
+			{
+			  field: 'somefield6',
+			  value: 'somevalue6',
+			  operation: 'some boolean or mathemathical operation',
+			  dataType: 'string'
+			}
+		      ]
+	            }
+	          ]
 		}
-	]
+       ]
 };
 
 ````
