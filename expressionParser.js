@@ -21,7 +21,6 @@ var expressionParser = (function _expressionParser() {
     booleanExpressionTree.filterCollection = function _filterCollection(collection) {
         return collection.filter(function collectionMap(curr) {
             this.context = curr;
-            console.log(this.rootNode.evaluate);
             return this.rootNode.evaluate(curr);
         }, this);
     };
@@ -31,17 +30,9 @@ var expressionParser = (function _expressionParser() {
     booleanExpressionTree.getContext = function _getContext() {
         return this.internalGetContext.bind(this);
     };
-
-    var conjunct = {
-        createConjunct: function _createConjunct(conjunction) {
-            this.operator = conjunction;
-            this.numberOfOperands = getNumberOfOperands(this.operator);
-
-            var operatorCharacteristics = getOperatorPrecedence(this.operator);
-
-            this.precedence = operatorCharacteristics.precedence;
-            this.associativity = operatorCharacteristics.associativity;
-        }
+    booleanExpressionTree.isTrue = function _isTrue(item) {
+        this.context = item;
+        return this.rootNode.value;
     };
 
     var astNode = {
@@ -58,9 +49,10 @@ var expressionParser = (function _expressionParser() {
                 this.field = node.field;
                 this.standard = node.value;
                 this.operation = node.operation;
+                this.dataType = node.dataType;
                 this.context = null;
             }
-            this.value = null;
+            this._value = null;
             this.getContext = null;
             this.queue = null;
         }
@@ -91,7 +83,6 @@ var expressionParser = (function _expressionParser() {
     };
 
     astNode.evaluate = function _evaluate() {
-        console.log('made it here');
         if (this.children && this.children.length) {
             switch (this.operator) {
                 case 'or':
@@ -109,16 +100,54 @@ var expressionParser = (function _expressionParser() {
             }
         }
         else {
-            this.value = comparator(this.getContext()[this.field], this.standard, this.operation);
-            return this.value;
+            var baseVal,
+                curVal,
+                initialVal = this.getContext()[this.field];
+
+            switch(this.dataType) {
+                case 'time':
+                    curVal = getNumbersFromTime(initialVal);
+                    baseVal = getNumbersFromTime(this.standard);
+
+                    if (initialVal.indexOf('PM') > -1) curVal[0] += 12;
+                    if (this.standard.indexOf('PM') > -1) baseVal[0] += 12;
+
+                    curVal = convertTimeArrayToSeconds(curVal);
+                    baseVal = convertTimeArrayToSeconds(baseVal);
+                    break;
+                case 'number':
+                    curVal = parseFloat(initialVal);
+                    baseVal = parseFloat(this.standard);
+                    break;
+                case 'date':
+                    curVal = new Date(initialVal);
+                    baseVal = new Date(this.standard);
+                    break;
+                default:
+                    curVal = initialVal;
+                    baseVal = this.standard;
+                    break;
+            }
+
+            this._value = comparator(curVal, baseVal, this.operation);
+            return this._value;
         }
     };
 
     astNode.getValue = function _getValue() {
-        if (this.value == null)
-            this.value = this.evaluate();
-        return this.value;
+        if (this._value == null)
+            this._value = this.evaluate();
+        return this._value;
     };
+
+    Object.defineProperty(astNode, 'value', {
+        get: function _getValue() {
+            if (!this._value) {
+                this._value = this.evaluate();
+            }
+            return this._value;
+        }
+    });
 
     function getNodeContext(bet) {
         return bet.internalGetContext.bind(bet);
@@ -152,7 +181,7 @@ var expressionParser = (function _expressionParser() {
             topOfStack;
 
         while (idx < filterObject.filterGroup.length) {
-            if (idx > 0 || filterObject.filterGroup.length === 1) {
+            if (idx > 0) {
                 var conjunctObj = Object.create(astNode);
                 conjunctObj.createNode(conjunction);
                 pushConjunctionOntoStack(conjunctObj, stack, queue);
@@ -218,40 +247,34 @@ var expressionParser = (function _expressionParser() {
 
     function comparator(val, base, type) {
         switch (type) {
-            case '==':
-                return val == base;
+            case 'eq':
             case '===':
                 return val === base;
-            case '<=':
-                return val <= base;
-            case '>=':
-                return val >= base;
-            case '!':
-                return !val;
-            case '':
-                return !!val;
-            case '!=':
-                return val != base;
+            case '==':
+                return val == base;
+            case 'neq':
             case '!==':
                 return val !== base;
-            case '>':
-                return val > base;
-            case '<':
-                return val < base;
-            case 'eq':
-                return val === base;
-            case 'neq':
-                return val !== base;
+            case '!=':
+                return val != base;
             case 'gte':
+            case '>=':
                 return val >= base;
             case 'gt':
+            case '>':
                 return val > base;
             case 'lte':
+            case '<=':
                 return val <= base;
             case 'lt':
+            case '<':
                 return val < base;
             case 'not':
+            case '!':
+            case 'falsey':
                 return !val;
+            case 'truthy':
+                return !!val;
             case 'ct':
                 return !!~val.toLowerCase().indexOf(base.toLowerCase());
             case 'nct':
@@ -304,6 +327,37 @@ var expressionParser = (function _expressionParser() {
             default:
                 return null;
         }
+    }
+
+    function getNumbersFromTime(val) {
+        var re = /^(0?[1-9]|1[012])(?:(?:(:|\.)([0-5]\d))(?:\2([0-5]\d))?)?(?:(\ [AP]M))$|^([01]?\d|2[0-3])(?:(?:(:|\.)([0-5]\d))(?:\7([0-5]\d))?)$/;
+        if (!re.test(val)) return [];
+        var timeGroups = re.exec(val);
+        var hours = timeGroups[1] ? +timeGroups[1] : +timeGroups[6];
+        var minutes, seconds, meridiem, retVal = [];
+        if (timeGroups[2]) {
+            minutes = timeGroups[3] || '00';
+            seconds = timeGroups[4]  || '00';
+            meridiem = timeGroups[5].replace(' ', '') || null;
+        }
+        else if (timeGroups[6]) {
+            minutes = timeGroups[8] || '00';
+            seconds = timeGroups[9] || '00';
+        }
+        else{
+            minutes = '00';
+            seconds = '00';
+        }
+        retVal.push(hours);
+        retVal.push(minutes);
+        retVal.push(seconds);
+        if (meridiem) retVal.push(meridiem);
+        return retVal;
+    }
+
+    function convertTimeArrayToSeconds(timeArray) {
+        var hourVal = timeArray[0] === 12 || timeArray[0] === 24 ? timeArray[0] - 12 : timeArray[0];
+        return 3660 * hourVal + 60*timeArray[1] + timeArray[2];
     }
 
     return {
