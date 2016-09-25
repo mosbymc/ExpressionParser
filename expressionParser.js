@@ -123,6 +123,10 @@ var expressionParser = (function _expressionParser() {
                     curVal = new Date(initialVal);
                     baseVal = new Date(this.standard);
                     break;
+                case 'boolean':
+                    curVal = initialVal.toString();
+                    baseVal = this.standard.toString();
+                    break;
                 default:
                     curVal = initialVal;
                     baseVal = this.standard;
