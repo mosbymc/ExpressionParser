@@ -1,4 +1,21 @@
+/*
+The MIT License (MIT) Copyright © 2014
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
 var expressionParser = (function _expressionParser() {
+    var dateTimeRegex = '^(((?:(?:(?:(?:(?:(?:(?:(0?[13578]|1[02])(\\/|-|\\.)(31))\\4|(?:(0?[1,3-9]|1[0-2])(\\/|-|\\.)(29|30)\\7))|(?:(?:(?:(?:(31)(\\/|-|\\.)(0?[13578]|1[02])\\10)|(?:(29|30)(\\/|-|\\.)' +
+        '(0?[1,3-9]|1[0-2])\\13)))))((?:1[6-9]|[2-9]\\d)?\\d{2})|(?:(?:(?:(0?2)(\\/|-|\\.)(29)\\17)|(?:(29)(\\/|-|\\.)(0?2))\\20)((?:(?:1[6-9]|[2-9]\\d)?(?:0[48]|[2468][048]|[13579][26])' +
+        '|(?:(?:16|[2468][048]|[3579][26])00))))|(?:(?:((?:0?[1-9])|(?:1[0-2]))(\\/|-|\\.)(0?[1-9]|1\\d|2[0-8]))\\24|(0?[1-9]|1\\d|2[0-8])(\\/|-|\\.)((?:0?[1-9])|(?:1[0-2]))\\27)' +
+        '((?:1[6-9]|[2-9]\\d)?\\d{2}))))|(?:(?:((?:1[6-9]|[2-9]\\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00)))(\\/|-|\\.)(?:(?:(?:(0?2)(?:\\31)(29))))' +
+        '|((?:1[6-9]|[2-9]\\d)?\\d{2})(\\/|-|\\.)(?:(?:(?:(0?[13578]|1[02])\\35(31))|(?:(0?[1,3-9]|1[0-2])\\35(29|30)))|((?:0?[1-9])|(?:1[0-2]))\\35(0?[1-9]|1\\d|2[0-8])))))' +
+        '(?: |T)((0?[1-9]|1[012])(?:(?:(:|\\.)([0-5]\\d))(?:\\44([0-5]\\d))?)?(?:(\\ [AP]M))$|([01]?\\d|2[0-3])(?:(?:(:|\\.)([0-5]\\d))(?:\\49([0-5]\\d))?)$))';
+
     var booleanExpressionTree = {
         init: function _init() {
             this.tree = null;
@@ -115,6 +132,35 @@ var expressionParser = (function _expressionParser() {
                     curVal = convertTimeArrayToSeconds(curVal);
                     baseVal = convertTimeArrayToSeconds(baseVal);
                     break;
+                case 'datetime':
+                    var re = new RegExp(dateTimeRegex),
+                        execVal1, execVal2;
+                    if (re.test(initialVal) && re.test(this.standard)) {
+                        execVal1 = re.exec(initialVal);
+                        execVal2 = re.exec(this.standard);
+
+                        var dateComp1 = execVal1[2],
+                            dateComp2 = execVal2[2],
+                            timeComp1 = execVal1[42],
+                            timeComp2 = execVal2[42];
+
+                        timeComp1 = getNumbersFromTime(timeComp1);
+                        timeComp2 = getNumbersFromTime(timeComp2);
+                        if (timeComp1[3] && timeComp1[3] === 'PM')
+                            timeComp1[0] += 12;
+                        if (timeComp2[3] && timeComp2[3] === 'PM')
+                            timeComp2[0] += 12;
+
+                        dateComp1 = new Date(dateComp1);
+                        dateComp2 = new Date(dateComp2);
+                        curVal = dateComp1.getTime() + convertTimeArrayToSeconds(timeComp1);
+                        baseVal = dateComp2.getTime() + convertTimeArrayToSeconds(timeComp2);
+                    }
+                    else {
+                        curVal = 0;
+                        baseVal = 0;
+                    }
+                    break;
                 case 'number':
                     curVal = parseFloat(initialVal);
                     baseVal = parseFloat(this.standard);
@@ -128,8 +174,8 @@ var expressionParser = (function _expressionParser() {
                     baseVal = this.standard.toString();
                     break;
                 default:
-                    curVal = initialVal;
-                    baseVal = this.standard;
+                    curVal = initialVal.toString();
+                    baseVal = this.standard.toString();
                     break;
             }
 
@@ -360,8 +406,8 @@ var expressionParser = (function _expressionParser() {
     }
 
     function convertTimeArrayToSeconds(timeArray) {
-        var hourVal = timeArray[0] === 12 || timeArray[0] === 24 ? timeArray[0] - 12 : timeArray[0];
-        return 3660 * hourVal + 60*timeArray[1] + timeArray[2];
+        var hourVal = parseInt(timeArray[0].toString()) === 12 || parseInt(timeArray[0].toString()) === 24 ? parseInt(timeArray[0].toString()) - 12 : parseInt(timeArray[0]);
+        return 3660 * hourVal + 60 * parseInt(timeArray[1]) + parseInt(timeArray[2]);
     }
 
     return {
