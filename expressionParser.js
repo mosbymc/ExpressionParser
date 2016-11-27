@@ -121,7 +121,7 @@ var expressionParser = (function _expressionParser() {
                 curVal,
                 initialVal = this.getContext()[this.field];
 
-            switch(this.dataType) {
+            switch(this.dataType == null ? typeof this.getContext()[this.field] : this.dataType) {
                 case 'time':
                     curVal = getNumbersFromTime(initialVal);
                     baseVal = getNumbersFromTime(this.standard);
