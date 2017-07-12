@@ -9,6 +9,19 @@ THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR I
 */
 
 var expressionParser = (function _expressionParser() {
+    var tokens = {
+        rightParens: ')',
+        leftParens: '(',
+        AND: 'and',
+        OR: 'or',
+        XOR: 'xor',
+        XAND: 'xand',
+        XNOR: 'xnor',
+        NOR: 'nor',
+        NAND: 'nand',
+        NOT: '!'
+    };
+
     var dateTimeRegex = '^(((?:(?:(?:(?:(?:(?:(?:(0?[13578]|1[02])(\\/|-|\\.)(31))\\4|(?:(0?[1,3-9]|1[0-2])(\\/|-|\\.)(29|30)\\7))|(?:(?:(?:(?:(31)(\\/|-|\\.)(0?[13578]|1[02])\\10)|(?:(29|30)(\\/|-|\\.)' +
         '(0?[1,3-9]|1[0-2])\\13)))))((?:1[6-9]|[2-9]\\d)?\\d{2})|(?:(?:(?:(0?2)(\\/|-|\\.)(29)\\17)|(?:(29)(\\/|-|\\.)(0?2))\\20)((?:(?:1[6-9]|[2-9]\\d)?(?:0[48]|[2468][048]|[13579][26])' +
         '|(?:(?:16|[2468][048]|[3579][26])00))))|(?:(?:((?:0?[1-9])|(?:1[0-2]))(\\/|-|\\.)(0?[1-9]|1\\d|2[0-8]))\\24|(0?[1-9]|1\\d|2[0-8])(\\/|-|\\.)((?:0?[1-9])|(?:1[0-2]))\\27)' +
@@ -102,17 +115,17 @@ var expressionParser = (function _expressionParser() {
     astNode.evaluate = function _evaluate() {
         if (this.children && this.children.length) {
             switch (this.operator) {
-                case 'or':
+                case tokens.OR:
                     return this.children[1].evaluate() || this.children[0].evaluate();
-                case 'and':
+                case tokens.AND:
                     return this.children[1].evaluate() && this.children[0].evaluate();
-                case 'xor':
+                case tokens.XOR:
                     return !!(this.children[1].evaluate() ^ this.children[0].evaluate());
-                case 'nor':
+                case tokens.NOR:
                     return !(this.children[1].evaluate() || this.children[0].evaluate());
-                case 'nand':
+                case tokens.NAND:
                     return !(this.children[1].evaluate() && this.children[0].evaluate());
-                case 'xnor':
+                case tokens.XNOR:
                     return !(this.children[1].evaluate() ^ this.children[0].evaluate());
             }
         }
@@ -206,8 +219,7 @@ var expressionParser = (function _expressionParser() {
     function createFilterTreeFromFilterObject(filterObject) {
         var ret = Object.create(booleanExpressionTree);
         ret.init();
-        var operandStack = Object.create(stack);
-        operandStack.init();
+        var operandStack = Object.create(stack).init();
         var queue = [],
             topOfStack;
 
@@ -215,7 +227,7 @@ var expressionParser = (function _expressionParser() {
 
         while (operandStack.length) {
             topOfStack = operandStack.peek;
-            if (topOfStack.operator !== '(')
+            if (topOfStack.operator !== tokens.leftParens)
                 queue.push(operandStack.pop);
             else operandStack.pop;
         }
@@ -238,12 +250,12 @@ var expressionParser = (function _expressionParser() {
             }
             if (filterObject.filterGroup[idx].conjunct) {
                 var paren = Object.create(astNode);
-                paren.createNode('(');
+                paren.createNode(tokens.leftParens);
                 stack.push(paren);
                 iterateFilterGroup(filterObject.filterGroup[idx], stack, queue, contextGetter);
                 while (stack.length) {
                     topOfStack = stack.peek;
-                    if (topOfStack.operator !== '(')
+                    if (topOfStack.operator !== tokens.leftParens)
                         queue.push(stack.pop);
                     else {
                         stack.pop;
@@ -277,9 +289,11 @@ var expressionParser = (function _expressionParser() {
         init: function _init() {
             this.data = [];
             this.top = 0;
+            return this;
         },
         push: function _push(item) {
             this.data[this.top++] = item;
+            return this;
         },
         get pop() {
             return this.data[--this.top];
@@ -289,6 +303,7 @@ var expressionParser = (function _expressionParser() {
         },
         get clear() {
             this.top = 0;
+            return this;
         },
         get length() {
             return this.top;
@@ -334,10 +349,10 @@ var expressionParser = (function _expressionParser() {
 
     function getNumberOfOperands(operator) {
         switch (operator) {
-            case '!':
+            case tokens.NOT:
                 return 1;
-            case '(':
-            case ')':
+            case tokens.leftParens:
+            case tokens.rightParens:
                 return 0;
             default:
                 return 2;
@@ -348,28 +363,28 @@ var expressionParser = (function _expressionParser() {
 
     function getOperatorPrecedence(operator) {
         switch (operator) {
-            case '!':
+            case tokens.NOT:
                 return {
                     precedence: 1,
                     associativity: associativity.LTR
                 };
-            case 'and':
+            case tokens.AND:
                 return {
                     precedence: 2,
                     associativity: associativity.RTL
                 };
-            case 'xor':
+            case tokens.XOR:
                 return {
                     precedence: 3,
                     associativity: associativity.RTL
                 };
-            case 'or':
+            case tokens.OR:
                 return {
                     precedence: 4,
                     associativity: associativity.RTL
                 };
-            case '(':
-            case ')':
+            case tokens.leftParens:
+            case tokens.rightParens:
                 return {
                     precedence: null,
                     associativity: null
