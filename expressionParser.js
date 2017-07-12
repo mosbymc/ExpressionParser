@@ -31,7 +31,7 @@ var expressionParser = (function _expressionParser() {
         return this;
     };
     booleanExpressionTree.createTree = function _createTree() {
-        this.queue.pop();
+        this.queue.pop;
         if (this.queue.length)
             this.rootNode.addChildren(this.queue);
     };
@@ -83,10 +83,10 @@ var expressionParser = (function _expressionParser() {
 
     astNode.addChildren = function _addChildren(tree) {
         if (this.children && this.children.length < this.numberOfOperands) {
-            var child = tree.pop();
+            var child = tree.pop;
             child.addChildren(tree);
             this.children.push(child);
-            child = tree.pop();
+            child = tree.pop;
             child.addChildren(tree);
             this.children.push(child);
         }
@@ -213,11 +213,11 @@ var expressionParser = (function _expressionParser() {
 
         iterateFilterGroup(filterObject, operandStack, queue, getNodeContext(ret));
 
-        while (operandStack.length()) {
-            topOfStack = operandStack.peek();
+        while (operandStack.length) {
+            topOfStack = operandStack.peek;
             if (topOfStack.operator !== '(')
-                queue.push(operandStack.pop());
-            else operandStack.pop();
+                queue.push(operandStack.pop);
+            else operandStack.pop;
         }
 
         ret.setTree(queue);
@@ -241,12 +241,12 @@ var expressionParser = (function _expressionParser() {
                 paren.createNode('(');
                 stack.push(paren);
                 iterateFilterGroup(filterObject.filterGroup[idx], stack, queue, contextGetter);
-                while (stack.length()) {
-                    topOfStack = stack.peek();
+                while (stack.length) {
+                    topOfStack = stack.peek;
                     if (topOfStack.operator !== '(')
-                        queue.push(stack.pop());
+                        queue.push(stack.pop);
                     else {
-                        stack.pop();
+                        stack.pop;
                         break;
                     }
                 }
@@ -262,11 +262,11 @@ var expressionParser = (function _expressionParser() {
     }
 
     function pushConjunctionOntoStack(conjunction, stack, queue) {
-        while (stack.length()) {
-            var topOfStack = stack.peek();
+        while (stack.length) {
+            var topOfStack = stack.peek;
             if ((conjunction.associativity === associativity.LTR && conjunction.precedence <= topOfStack.precedence)
                 || (conjunction.associativity === associativity.RTL && conjunction.precedence < topOfStack.precedence))
-                queue.push(stack.pop());
+                queue.push(stack.pop);
             else
                 break;
         }
@@ -281,16 +281,16 @@ var expressionParser = (function _expressionParser() {
         push: function _push(item) {
             this.data[this.top++] = item;
         },
-        pop: function _pop() {
+        get pop() {
             return this.data[--this.top];
         },
-        peek: function _peek() {
+        get peek() {
             return this.data[this.top - 1];
         },
-        clear: function _clear() {
+        get clear() {
             this.top = 0;
         },
-        length: function _length() {
+        get length() {
             return this.top;
         }
     };
